@@ -1,0 +1,12 @@
+target
+.idea
+*.pyc
+*.pyo
+*.bak
+.project
+.pydevproject
+.seed
+deb
+*.deb
+*.*~
+*~
