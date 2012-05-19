@@ -21,7 +21,6 @@
   <string id="628">Status</string>  
   <string id="629">Add Hidden</string>  
   <string id="630">Refresh</string>  
-  <string id="30100">General</string>
   <string id="30101">Enter password</string>
   <string id="30102">Installing</string>
   <string id="30103">Enter SSID</string>
@@ -46,7 +45,9 @@
   <string id="30124">Enter encryption (NONE, WEP or WPA)</string>
   <string id="30125">That is not a known encryption</string>
   <string id="30126">Done</string>
+  <string id="30127">More than one wifi device found. This could cause problem.</string>
+  <string id="30128">No wifi device found</string>
   <string id="99999"></string>
-
-
+  <string id="32100">General</string>
+  <string id="32101">Disable ipv6 (in NEW connections only)</string>
 </strings>

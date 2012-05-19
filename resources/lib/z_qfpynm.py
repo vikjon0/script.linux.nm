@@ -27,8 +27,12 @@
 #    http://cgit.freedesktop.org/NetworkManager/NetworkManager/tree/examples/python
 
 
+#TODO Reverse the list puting strongest first
+#TODO What if more than one wifi card exists? list devices and select which one we mean
+#TODO catch errors on the dbus actions..including the import. Test with nm not installed etc.
 #TODO Check if the ssid is already added, if so just activate it and set to auto / or new name
-#TODO Use itemgetter and attrgetter to handle config?
+#TODO Test state when switching from one wifi to another. make sure no delay from state 100 on old
+
 
 #Longer term
 #TODO Add detection of group/enterprise encryption
@@ -36,8 +40,6 @@
 #TODO Add handling of static IP
 #TODO Add wired and 3G connections
 #TODO Change it all into a class?
-#TODO Add detailed config 
-
 
 #########################################################
 #    Limitations: 
@@ -47,7 +49,7 @@
 #    Only dhcp
 #    Does not display enterprise/group enncryptions
 
-#    Version 0.1.1 2012-05-17
+#    Version 0.1.0 2012-05-16
 
 import dbus
 import uuid
@@ -129,24 +131,10 @@ def get_connections():
                 connection_dict['auto'] = config['connection']['autoconnect']
             else:
                 connection_dict['auto'] = 1
-            
-            if  '802-11-wireless-security' in config:
-                key_mgmt = config['802-11-wireless-security']['key-mgmt']
-                if key_mgmt == 'none':
-                    encryption = 'WEP'
-                elif key_mgmt == 'wpa-psk':
-                    encryption  = 'WPA'
-                else:
-                    encryption = 'UNKNOWN'
-            else:
-                encryption = 'NONE'
-            
-            connection_dict['encryption'] = encryption
                 
             connection_list.append(connection_dict)
                     
     return (connection_list)
-
         
 def print_connections():
     print 'SSID\t\tactive\tauto\tUUID\t\t\t\t\tID'
@@ -164,10 +152,10 @@ def print_connections():
             connection_dict['uuid'],
             connection_dict['id'],
             "")
-def list_wifi_devices():
+def count_wifi_devices():
     # Get all network devices (list of device paths)
     devices = nm_iface.GetDevices()
-    l = []
+    i = 0
     for d_path in devices:
         dev_proxy = bus.get_object("org.freedesktop.NetworkManager", d_path )
         dev_prop_iface = dbus.Interface(dev_proxy, "org.freedesktop.DBus.Properties")
@@ -182,9 +170,10 @@ def list_wifi_devices():
         dtype = dev_prop_iface.Get("org.freedesktop.NetworkManager.Device", "DeviceType")
         if dtype == 2:   # WiFi
             name = dev_prop_iface.Get("org.freedesktop.NetworkManager.Device","Interface")
-            l.append(name)
-    return l
-            
+            print name
+            i = i + 1
+    return i
+        
 def get_wifi_device():
     #Assuming only one exists
     #Returns device path
@@ -256,8 +245,7 @@ def get_wireless_networks():
 
         wlessL.append(net_dict)
         
-    SortedL = sorted(wlessL, key=lambda k: k['signal'],reverse=True)     
-    return (SortedL)
+    return (wlessL)
 
 def print_wireless():
     print '#\tBSSID\t\tChnl\tSts\tESSID\t\tenctype'
@@ -296,7 +284,7 @@ def deactive_wifi():
     dev_iface = dbus.Interface(dev_proxy, "org.freedesktop.NetworkManager.Device")
     dev_iface.Disconnect()
             
-def activate_connection(uuid):
+def activate_connection():
     # Now ask NM to activate that connection
     con_path = nm_settings_iface.GetConnectionByUuid(uuid)
     dev_path = get_wifi_device()
@@ -324,7 +312,7 @@ def delete_connection(uuid):
         
     con_iface.Delete()
 
-def create_wifi_config(ssid,akey,encryption,wep_alg,disable_ipv6):
+def create_wifi_config(ssid,akey,encryption,wep_alg):
     
     encryption = encryption.upper()
     if encryption[:3] == 'WPA':
@@ -344,12 +332,9 @@ def create_wifi_config(ssid,akey,encryption,wep_alg,disable_ipv6):
 
 
     s_ip4 = { 'method': 'auto', 'name': 'ipv4' } 
+    s_ip6 = { 'method': 'ignore', 'name': 'ipv6' } 
     
-    if disable_ipv6 == True:
-        s_ip6 = { 'method': 'ignore', 'name': 'ipv6' } 
-    else:
-        s_ip6 = { 'method': 'auto', 'name': 'ipv6' } 
-    
+
     s_wsec = {}
     if (encryption == "WPA"):
         s_wsec['key-mgmt'] = 'wpa-psk'
@@ -370,8 +355,8 @@ def create_wifi_config(ssid,akey,encryption,wep_alg,disable_ipv6):
         config = { 'connection': s_con, '802-11-wireless': s_wifi, 'ipv4': s_ip4,'ipv6': s_ip6 }
     return config
 
-def add_wifi(ssid,akey,encryption,wep_alg,disable_ipv6):
-    config = create_wifi_config(ssid,akey,encryption,wep_alg,disable_ipv6)
+def add_wifi(ssid,akey,encryption,wep_alg):
+    config = create_wifi_config(ssid,akey,encryption,wep_alg)
     con_path =  nm_settings_iface.AddConnection(config)
     activate_connection(get_con_uuid_by_path(con_path))
 
@@ -495,6 +480,7 @@ nm_state  = {
 
 ########################################################################
 
+
 if __name__ == '__main__':
     print "This is just for testing the toolkit...."
     print "0 Quit"
@@ -528,7 +514,7 @@ if __name__ == '__main__':
         if not errors == '':
             print (errors)
             1/0
-        acon_path = add_wifi(aNetwork_id,akey,aencryption,wep_alg, False)
+        acon_path = add_wifi(aNetwork_id,akey,aencryption,wep_alg)
         import time
         for i in range(1, 150):
             state,stateTXT = get_device_state(get_wifi_device())
@@ -596,8 +582,4 @@ if __name__ == '__main__':
         deactivate_connection(aUUID)
         
     if aSelect == "10":
-        l = list_wifi_devices()    
-        print len(l)
-        print ','.join(l)
-        l = []
-        print len(l)
+        count_wifi_devices()    
