@@ -9,6 +9,7 @@ import time
 getLS   = sys.modules[ "__main__" ].__language__
 __cwd__ = sys.modules[ "__main__" ].__cwd__
 
+
 #Longer term
 #TODO Build a service that monitor state and display a notification about changes
 #TODO Display network detail window
@@ -33,17 +34,45 @@ class GUI(xbmcgui.WindowXMLDialog):
         self.showDialog()
         
         if self.first == True:
-            devlist = qfpynm.list_wifi_devices()
-            if len(devlist) > 1:
-                self.msg = getLS(30127)
-            elif len(devlist) == 0:
-                self.msg = getLS(30128)
-            
+            nm_OK, err = self.check_nm() 
+            if nm_OK == True:
+                devlist = qfpynm.list_wifi_devices()        
+                if len(devlist) > 1:
+                    self.msg = getLS(30127)
+                elif len(devlist) == 0:
+                    self.msg = getLS(30128)
+            else:
+                self.msg = getLS(err)
         
         self.status_label.setLabel(self.msg)
         
         #self.disconnect_button.setEnabled(False)
         #self.delete_button.setEnabled(False)
+        
+    def check_nm(self):
+        try:
+            import dbus
+        except:
+            # dbus not available
+            err = 30130
+            return False, err
+        
+        try:
+            bus = dbus.SystemBus()
+        except:
+            # could not connect to dbus
+            err =  30131
+            return False, err
+            
+        try:
+            nm_proxy = bus.get_object("org.freedesktop.NetworkManager", "/org/freedesktop/NetworkManager")
+            nm_iface = dbus.Interface(nm_proxy, "org.freedesktop.NetworkManager")
+        except:
+            # could not connect to network-manager
+            err = 30132    
+            return False, err
+        
+        return True, ''
         
     def defineControls(self):
         #actions

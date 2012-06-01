@@ -32,7 +32,6 @@
   <string id="30111">Internet is not accessable</string>
   <string id="30112">Please wait...</string>
   <string id="30113">Connection attempt made</string>
-  <string id="30114">Unix username</string>
   <string id="30115">Refreshing...</string>
   <string id="30116">Connection Created</string>
   <string id="30117">Disconnecting....</string>
@@ -47,6 +46,9 @@
   <string id="30126">Done</string>
   <string id="30127">More than one wifi device found. This could cause problem.</string>
   <string id="30128">No wifi device found</string>
+  <string id="30130">dbus not available</string>
+  <string id="30131">Could not connect to dbus</string>
+  <string id="30132">Could not connect to network-manager</string>
   <string id="99999"></string>
   <string id="32100">General</string>
   <string id="32101">Disable ipv6 (in NEW connections only)</string>
